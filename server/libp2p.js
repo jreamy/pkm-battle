@@ -1,16 +1,21 @@
+import { tcp } from "@libp2p/tcp";
+import { tls } from "@libp2p/tls";
 import { noise } from "@chainsafe/libp2p-noise";
 import { yamux } from "@chainsafe/libp2p-yamux";
 import { gossipsub } from "@chainsafe/libp2p-gossipsub";
 import { createDelegatedRoutingV1HttpApiClient } from "@helia/delegated-routing-v1-http-api-client";
 import { delegatedHTTPRoutingDefaults } from "@helia/routers";
 import { autoNAT } from "@libp2p/autonat";
+import { autoTLS } from "@ipshipyard/libp2p-auto-tls";
 import { bootstrap } from "@libp2p/bootstrap";
-import { circuitRelayTransport } from "@libp2p/circuit-relay-v2";
+import {
+  circuitRelayTransport,
+  circuitRelayServer,
+} from "@libp2p/circuit-relay-v2";
 import { dcutr } from "@libp2p/dcutr";
 import { http } from "@libp2p/http";
 import { identify, identifyPush } from "@libp2p/identify";
 import { kadDHT } from "@libp2p/kad-dht";
-import { mplex } from "@libp2p/mplex";
 import { ping } from "@libp2p/ping";
 import { webRTC, webRTCDirect } from "@libp2p/webrtc";
 import { webSockets } from "@libp2p/websockets";
@@ -29,19 +34,35 @@ export const bootstrapConfig = {
   ],
 };
 
-const Libp2pOptions = {
+export const Libp2pOptions = {
   addresses: {
-    listen: ["/p2p-circuit", "/webrtc"],
+    listen: [
+      // "/ip4/0.0.0.0/tcp/0",
+      "/ip4/0.0.0.0/tcp/0/ws",
+      "/ip4/0.0.0.0/udp/0/webrtc-direct",
+      // "/ip6/::/tcp/0",
+      "/ip6/::/tcp/0/ws",
+      "/ip6/::/udp/0/webrtc-direct",
+      "/p2p-circuit",
+      "/webrtc",
+    ],
   },
-  transports: [circuitRelayTransport(), webRTC(), webRTCDirect(), webSockets()],
-  connectionEncrypters: [noise()],
+  transports: [
+    circuitRelayTransport(),
+    tcp(),
+    webRTC(),
+    webRTCDirect(),
+    webSockets(),
+  ],
   connectionGater: {
     denyDialMultiaddr: () => false,
   },
-  streamMuxers: [yamux(), mplex()],
+  connectionEncrypters: [noise()],
+  streamMuxers: [yamux()],
   peerDiscovery: [bootstrap(bootstrapConfig)],
   services: {
     autoNAT: autoNAT(),
+    // autoTLS: autoTLS(),
     dcutr: dcutr(),
     delegatedRouting: () =>
       createDelegatedRoutingV1HttpApiClient(
@@ -49,7 +70,6 @@ const Libp2pOptions = {
         delegatedHTTPRoutingDefaults(),
       ),
     dht: kadDHT({
-      clientMode: true,
       validators: {
         ipns: ipnsValidator,
       },
@@ -60,9 +80,9 @@ const Libp2pOptions = {
     identify: identify(),
     identifyPush: identifyPush(),
     ping: ping(),
+    relay: circuitRelayServer(),
+    // upnp: uPnPNAT(),
     http: http(),
     pubsub: gossipsub({ allowPublishToZeroTopicPeers: true }),
   },
 };
-
-export { Libp2pOptions };
