@@ -10,7 +10,6 @@ import { dcutr } from "@libp2p/dcutr";
 import { http } from "@libp2p/http";
 import { identify, identifyPush } from "@libp2p/identify";
 import { kadDHT } from "@libp2p/kad-dht";
-import { mplex } from "@libp2p/mplex";
 import { ping } from "@libp2p/ping";
 import { webRTC, webRTCDirect } from "@libp2p/webrtc";
 import { webSockets } from "@libp2p/websockets";
@@ -29,17 +28,15 @@ export const bootstrapConfig = {
   ],
 };
 
-const Libp2pOptions = {
+export const Libp2pOptions = {
   addresses: {
     listen: ["/p2p-circuit", "/webrtc"],
   },
   transports: [circuitRelayTransport(), webRTC(), webRTCDirect(), webSockets()],
   connectionEncrypters: [noise()],
-  connectionGater: {
-    denyDialMultiaddr: () => false,
-  },
-  streamMuxers: [yamux(), mplex()],
+  streamMuxers: [yamux()],
   peerDiscovery: [bootstrap(bootstrapConfig)],
+  connectionGater: { denyDialMultiaddr: () => false },
   services: {
     autoNAT: autoNAT(),
     dcutr: dcutr(),
@@ -60,9 +57,7 @@ const Libp2pOptions = {
     identify: identify(),
     identifyPush: identifyPush(),
     ping: ping(),
-    http: http(),
+    // http: http(),
     pubsub: gossipsub({ allowPublishToZeroTopicPeers: true }),
   },
 };
-
-export { Libp2pOptions };

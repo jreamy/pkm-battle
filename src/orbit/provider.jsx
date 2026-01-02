@@ -2,7 +2,6 @@ import React, { useState, useEffect, createContext, useContext } from "react";
 
 import { createHelia } from "helia";
 import { createOrbitDB } from "@orbitdb/core";
-import { createLibp2p } from "libp2p";
 import { Libp2pOptions } from "./libp2p-config";
 
 import { IDBBlockstore } from "blockstore-idb";
@@ -25,11 +24,12 @@ export const OrbitProvider = ({ children }) => {
       await datastore.open();
       await blockstore.open();
 
-      //   const libp2p = await createLibp2p({ ...Libp2pOptions });
+      localStorage.setItem("debug", "libp2p:pubsub");
 
       const ipfs = await createHelia({
-        libp2p: Libp2pOptions,
-        // libp2p,
+        libp2p: {
+          services: Libp2pOptions.services,
+        },
         blockstore,
         datastore,
       });

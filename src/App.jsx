@@ -3,13 +3,17 @@ import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import "./App.css";
 import { useDB, useOrbit } from "./orbit/provider.jsx";
+import { peerIdFromString } from "@libp2p/peer-id";
+import { IPFSAccessController } from "@orbitdb/core";
 
 function App() {
   const [count, setCount] = useState(0);
   const { ipfs } = useOrbit();
-  const [peerID, setPeerID] = useState("");
   const [id, setID] = useState("");
   const [db, setDB] = useDB();
+
+  const [peerID, setPeerID] = useState("");
+  const [conn, setConn] = useState();
 
   useEffect(() => {
     if (db?.events) {
@@ -21,21 +25,21 @@ function App() {
   }, [db]);
 
   const [peers, setPeers] = useState(0);
+  const [conns, setConns] = useState(0);
 
   useEffect(() => {
     if (ipfs) {
       // Set up the interval
       const intervalId = setInterval(async () => {
-        if (ipfs) {
-          const peers = await ipfs.libp2p.peerStore.all();
-          setPeers(peers.length);
-        }
+        setConns(ipfs.libp2p.getConnections().length);
+        const peers = await ipfs.libp2p.peerStore.all();
+        setPeers(peers.length);
       }, 3000);
 
       // Clean up the interval when the component unmounts or the effect re-runs
-      // return () => {
-      //   clearInterval(intervalId);
-      // };
+      return () => {
+        clearInterval(intervalId);
+      };
     }
   }, [ipfs]);
 
@@ -58,18 +62,30 @@ function App() {
         ></input>
         <button
           onClick={async () => {
-            console.log(ipfs);
-            if (ipfs?.libp2p) {
-              const peerInfo = await ipfs?.libp2p?.peerRouting?.findPeer(
-                peerID,
-                { timeout: 5000 },
-              );
-              console.log(peerInfo);
-              await ipfs?.libp2p.dial(peerInfo.id);
+            if (conn) {
+              conn.close();
+              setConn(null);
+            } else if (ipfs?.libp2p) {
+              console.log("connecting to " + peerID);
+              let conn;
+              try {
+                conn = await ipfs?.libp2p.dial(peerIdFromString(peerID));
+              } catch (err) {
+                ipfs.libp2p.peerStore.delete(peerIdFromString(peerID));
+                const peerInfo = await ipfs?.libp2p?.peerRouting?.findPeer(
+                  peerIdFromString(peerID),
+                  { timeout: 5000 },
+                );
+                console.log(peerInfo);
+                conn = await ipfs?.libp2p.dial(peerIdFromString(peerID));
+              }
+
+              console.log({ conn });
+              setConn(conn);
             }
           }}
         >
-          connect
+          {conn ? conn.status : "connect"}
         </button>
         <br />
         <input
@@ -78,7 +94,9 @@ function App() {
           onChange={(event) => setID(event.target.value)}
         ></input>
         <button
-          onClick={async () => setDB({ id: id, options: { create: false } })}
+          onClick={async () =>
+            setDB({ id: id, options: { create: false, timeout: 5000 } })
+          }
         >
           join
         </button>
@@ -87,10 +105,9 @@ function App() {
             setDB({
               id: "events",
               options: {
-                create: true,
-                accessController: {
+                AccessController: IPFSAccessController({
                   write: ["*"],
-                },
+                }),
               },
             })
           }
@@ -121,6 +138,7 @@ function App() {
       <div className="card">
         <button onClick={async () => db.add("world")}>count is {count}</button>
         <button onClick={async () => {}}>peers: {peers}</button>
+        <button onClick={async () => {}}>conns: {conns}</button>
         <p>
           Edit <code>src/App.jsx</code> and save to test HMR
         </p>

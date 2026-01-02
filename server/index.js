@@ -1,27 +1,33 @@
-import { createLibp2p } from "libp2p";
 import { createHelia, libp2pDefaults } from "helia";
 import { createOrbitDB } from "@orbitdb/core";
 import { LevelBlockstore } from "blockstore-level";
-import { Libp2pOptions } from "./libp2p.js";
 import { gossipsub } from "@chainsafe/libp2p-gossipsub";
+import { FaultTolerance } from "@libp2p/interface-transport";
+import { createLibp2p } from "libp2p";
+import { http } from "@libp2p/http";
 
 // Create an IPFS instance.
 const cfg = libp2pDefaults();
 cfg.services.pubsub = gossipsub({ allowPublishToZeroTopicPeers: true });
 cfg.connectionGater = { denyDialMultiaddr: () => false };
+cfg.transportManager = {
+  faultTolerance: FaultTolerance.NO_FATAL,
+};
+cfg.services.http = http();
 
 const blockstore = new LevelBlockstore("./data/ipfs/blocks");
-// const libp2p = await createLibp2p(Libp2pOptions);
+const libp2p = await createLibp2p(cfg);
 const ipfs = await createHelia({
+  //   libp2p,
   libp2p: cfg,
   blockstore,
 });
 
-// const orbitdb = await createOrbitDB({ ipfs, directory: `./data/orbitdb` });
+const orbitdb = await createOrbitDB({ ipfs, directory: `./data/orbitdb` });
 
-// const db = await orbitdb.open("my-db");
+const db = await orbitdb.open("my-db");
 
-// console.log("my-db address", db.address);
+console.log("my-db address", db.address);
 console.log("peer id:", ipfs.libp2p.peerId.toString());
 
 // // Add some records to the db.
@@ -30,11 +36,13 @@ console.log("peer id:", ipfs.libp2p.peerId.toString());
 
 const intervalId = setInterval(async () => {
   const peers = await ipfs.libp2p.peerStore.all();
+  const conns = ipfs.libp2p.getConnections().length;
 
-  //   const all = await db.all();
+  const all = await db.all();
   console.log({
     peers: peers?.length,
-    // counter: all?.length
+    counter: all?.length,
+    conns,
   });
 }, 5000);
 
@@ -49,8 +57,8 @@ process.on("SIGINT", async () => {
   // Perform any necessary cleanup here (e.g., closing database connections, saving data)
   // ... your cleanup code ...
   // Close your db and stop OrbitDB and IPFS.
-  //   await db.close();
-  //   await orbitdb.stop();
+  await db.close();
+  await orbitdb.stop();
   await ipfs.stop();
 
   // Optional: Add a short delay to ensure logs are flushed or async tasks complete
