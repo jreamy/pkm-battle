@@ -190,7 +190,7 @@ function App() {
       </div>
       <div className="card">
         <button onClick={async () => db.add("world")}>count is {count}</button>
-        <button onClick={async () => {}}>peers: {peers}</button>
+        <button onClick={async () => {}}>peers: {0}</button>
         <button onClick={async () => {}}>conns: {conns}</button>
         <p>
           Edit <code>src/App.jsx</code> and save to test HMR
