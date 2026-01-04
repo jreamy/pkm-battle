@@ -13,9 +13,6 @@ import { ipnsSelector } from "ipns/selector";
 import { ipnsValidator } from "ipns/validator";
 
 export const Libp2pOptions = {
-  addresses: {
-    listen: ["/p2p-circuit", "/webrtc"],
-  },
   connectionEncrypters: [noise()],
   streamMuxers: [yamux()],
   connectionGater: { denyDialMultiaddr: () => false },
