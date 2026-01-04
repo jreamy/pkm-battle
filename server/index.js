@@ -1,5 +1,5 @@
 import { createHelia, libp2pDefaults } from "helia";
-import { createOrbitDB } from "@orbitdb/core";
+import { createOrbitDB, IPFSAccessController } from "@orbitdb/core";
 import { LevelBlockstore } from "blockstore-level";
 import { gossipsub } from "@chainsafe/libp2p-gossipsub";
 import { FaultTolerance } from "@libp2p/interface-transport";
@@ -25,7 +25,11 @@ const ipfs = await createHelia({
 
 const orbitdb = await createOrbitDB({ ipfs, directory: `./data/orbitdb` });
 
-const db = await orbitdb.open("my-db");
+const db = await orbitdb.open("my-db", {
+  AccessController: IPFSAccessController({
+    write: ["*"],
+  }),
+});
 
 console.log("my-db address", db.address);
 console.log("peer id:", ipfs.libp2p.peerId.toString());

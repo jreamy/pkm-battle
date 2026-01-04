@@ -18,7 +18,11 @@ function App() {
   useEffect(() => {
     if (db?.events) {
       db.events.on("update", async () => {
+        const ms = Date.now();
+        console.log("starting counter");
         const all = await db.all();
+        const nextms = Date.now();
+        console.log(`updated ${nextms - ms}ms`);
         setCount(all.length);
       });
     }
@@ -26,6 +30,7 @@ function App() {
 
   const [peers, setPeers] = useState(0);
   const [conns, setConns] = useState(0);
+  const [ping, setPing] = useState(0);
 
   useEffect(() => {
     if (ipfs) {
@@ -42,6 +47,39 @@ function App() {
       };
     }
   }, [ipfs]);
+
+  useEffect(() => {
+    if (peerID) {
+      const intervalId = setInterval(async () => {
+        const conns = ipfs.libp2p.getConnections(peerIdFromString(peerID));
+        if (conns?.length) {
+          console.log("pinging: " + conns[0].remoteAddr.toString());
+          const latency = await ipfs.libp2p.services.ping.ping(
+            conns[0].remoteAddr,
+          );
+          setPing(latency);
+          if (!conn) {
+            setConn(conns[0]);
+          }
+        }
+      }, 1000);
+
+      return () => {
+        clearInterval(intervalId);
+      };
+    }
+  }, [peerID]);
+
+  useEffect(() => {
+    if (conn?.status === "closed") {
+      const conns = ipfs.libp2p
+        .getConnections(peerIdFromString(peerID))
+        ?.filter((x) => x?.status === "open");
+      if (conns?.length) {
+        setConn(conns[0]);
+      }
+    }
+  }, [conn]);
 
   return (
     <>
@@ -62,30 +100,45 @@ function App() {
         ></input>
         <button
           onClick={async () => {
+            const peer = peerIdFromString(peerID);
             if (conn) {
-              conn.close();
+              await conn.close();
               setConn(null);
             } else if (ipfs?.libp2p) {
+              const conns = ipfs.libp2p.getConnections(peer);
+              if (conns?.length) {
+                console.log("reusing to " + peerID);
+                setConn(conns[0]);
+                return;
+              }
+
               console.log("connecting to " + peerID);
               let conn;
               try {
-                conn = await ipfs?.libp2p.dial(peerIdFromString(peerID));
+                console.log("attempt 1");
+                conn = await ipfs?.libp2p.dial(peer);
               } catch (err) {
-                ipfs.libp2p.peerStore.delete(peerIdFromString(peerID));
+                console.log("attempt 2");
+                ipfs.libp2p.peerStore.delete(peer);
                 const peerInfo = await ipfs?.libp2p?.peerRouting?.findPeer(
-                  peerIdFromString(peerID),
+                  peer,
                   { timeout: 5000 },
                 );
                 console.log(peerInfo);
-                conn = await ipfs?.libp2p.dial(peerIdFromString(peerID));
+                conn = await ipfs?.libp2p.dial(peer);
               }
+              ipfs.libp2p.peerStore.merge(peer, {
+                tags: {
+                  "keep-alive": { value: 100 },
+                },
+              });
 
               console.log({ conn });
               setConn(conn);
             }
           }}
         >
-          {conn ? conn.status : "connect"}
+          {conn ? conn.status : "connect"} ({ping})
         </button>
         <br />
         <input
