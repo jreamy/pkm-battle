@@ -28,7 +28,7 @@ function App() {
     }
   }, [db]);
 
-  const [peers, setPeers] = useState(0);
+  // const [peers, setPeers] = useState(0);
   const [conns, setConns] = useState(0);
   const [ping, setPing] = useState(0);
 
@@ -37,8 +37,8 @@ function App() {
       // Set up the interval
       const intervalId = setInterval(async () => {
         setConns(ipfs.libp2p.getConnections().length);
-        const peers = await ipfs.libp2p.peerStore.all();
-        setPeers(peers.length);
+        // const peers = await ipfs.libp2p.peerStore.all();
+        // setPeers(peers.length);
       }, 3000);
 
       // Clean up the interval when the component unmounts or the effect re-runs
