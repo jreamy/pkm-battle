@@ -13,9 +13,6 @@ import { ipnsSelector } from "ipns/selector";
 import { ipnsValidator } from "ipns/validator";
 
 export const Libp2pOptions = {
-  connectionEncrypters: [noise()],
-  streamMuxers: [yamux()],
-  connectionGater: { denyDialMultiaddr: () => false },
   services: {
     autoNAT: autoNAT(),
     dcutr: dcutr(),
