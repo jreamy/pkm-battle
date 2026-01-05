@@ -35,7 +35,6 @@ function App() {
     }
   }, [db]);
 
-  const [peers, setPeers] = useState(0);
   const [conns, setConns] = useState(0);
 
   useEffect(() => {
@@ -43,7 +42,6 @@ function App() {
       // Set up the interval
       const intervalId = setInterval(async () => {
         setConns(ipfs.libp2p.getConnections().length);
-        setPeers((await ipfs.libp2p.peerStore.all()).length);
       }, 3000);
 
       // Clean up the interval when the component unmounts or the effect re-runs
@@ -222,18 +220,7 @@ function App() {
         <button onClick={async () => await db.add("world")}>
           count is {count}
         </button>
-        <button onClick={async () => {}}>peers: {peers}</button>
         <button onClick={async () => {}}>conns: {conns}</button>
-        <br />
-        <button
-          onClick={async () => {
-            for (const peer in ipfs?.libp2p?.peerStore?.all() ?? []) {
-              ipfs?.libp2p?.peerStore?.delete(peer.id);
-            }
-          }}
-        >
-          reset
-        </button>
       </div>
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more

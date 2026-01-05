@@ -3,11 +3,7 @@ import { createOrbitDB, IPFSAccessController } from "@orbitdb/core";
 import { LevelBlockstore } from "blockstore-level";
 import { gossipsub } from "@chainsafe/libp2p-gossipsub";
 import { FaultTolerance } from "@libp2p/interface-transport";
-import { createLibp2p } from "libp2p";
-import { http } from "@libp2p/http";
 import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
-import { bootstrap } from "@libp2p/bootstrap";
-import { mdns } from "@libp2p/mdns";
 
 // Create an IPFS instance.
 const cfg = libp2pDefaults();
@@ -16,7 +12,6 @@ cfg.connectionGater = { denyDialMultiaddr: () => false };
 cfg.transportManager = {
   faultTolerance: FaultTolerance.NO_FATAL,
 };
-cfg.services.http = http();
 cfg.peerDiscovery.push(
   pubsubPeerDiscovery({
     interval: 10000,
@@ -28,9 +23,7 @@ cfg.peerDiscovery.push(
 );
 
 const blockstore = new LevelBlockstore("./data/ipfs/blocks");
-const libp2p = await createLibp2p(cfg);
 const ipfs = await createHelia({
-  //   libp2p,
   libp2p: cfg,
   blockstore,
 });
@@ -45,10 +38,6 @@ const db = await orbitdb.open("my-db", {
 
 console.log("my-db address", db.address);
 console.log("peer id:", ipfs.libp2p.peerId.toString());
-
-// // Add some records to the db.
-// await db.add("hello world 1");
-// await db.add("hello world 2");
 
 const intervalId = setInterval(async () => {
   const peers = await ipfs.libp2p.peerStore.all();
