@@ -5,6 +5,9 @@ import { gossipsub } from "@chainsafe/libp2p-gossipsub";
 import { FaultTolerance } from "@libp2p/interface-transport";
 import { createLibp2p } from "libp2p";
 import { http } from "@libp2p/http";
+import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
+import { bootstrap } from "@libp2p/bootstrap";
+import { mdns } from "@libp2p/mdns";
 
 // Create an IPFS instance.
 const cfg = libp2pDefaults();
@@ -14,6 +17,15 @@ cfg.transportManager = {
   faultTolerance: FaultTolerance.NO_FATAL,
 };
 cfg.services.http = http();
+cfg.peerDiscovery.push(
+  pubsubPeerDiscovery({
+    interval: 10000,
+    topics: [
+      `_pmk_battle._peer-discovery._p2p._pubsub`,
+      "_peer-discovery._p2p._pubsub",
+    ],
+  }),
+);
 
 const blockstore = new LevelBlockstore("./data/ipfs/blocks");
 const libp2p = await createLibp2p(cfg);

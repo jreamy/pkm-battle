@@ -6,11 +6,7 @@ import { Libp2pOptions } from "./libp2p-config";
 
 import { IDBBlockstore } from "blockstore-idb";
 import { IDBDatastore } from "datastore-idb";
-import { noise } from "@chainsafe/libp2p-noise";
-import { yamux } from "@chainsafe/libp2p-yamux";
-import { circuitRelayTransport } from "@libp2p/circuit-relay-v2";
-import { webRTC, webRTCDirect } from "@libp2p/webrtc";
-import { webSockets } from "@libp2p/websockets";
+// import { LevelBlockstore } from "blockstore-level";
 
 export const OrbitContext = createContext(); // Default value
 export const useOrbit = () => useContext(OrbitContext);
@@ -24,6 +20,7 @@ export const OrbitProvider = ({ children }) => {
       // Create an IndexedDB datastore and blockstore
       const datastore = new IDBDatastore("datastore");
       const blockstore = new IDBBlockstore("blockstore");
+      //   const blockstore = new LevelBlockstore("./blockstore");
 
       // Open the stores
       await datastore.open();
@@ -60,10 +57,16 @@ export const OrbitProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
+    const timeoutId = setTimeout(async () => {
       clearTimeout(timeoutId);
 
       if (ipfs?.libp2p && !ipfs.libp2p.getConnections().length) {
+        console.log("re-initializing ipfs");
+
+        for (const peer in await ipfs.libp2p.peerStore.all()) {
+          await ipfs.libp2p.peerStore.delete(peer.id);
+        }
+
         const old = [ipfs, orbitdb];
         init();
         (async () => {

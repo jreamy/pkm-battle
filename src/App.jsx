@@ -17,28 +17,33 @@ function App() {
 
   useEffect(() => {
     if (db?.events) {
-      db.events.on("update", async () => {
-        const ms = Date.now();
-        console.log("starting counter");
+      db.events.on("update", async (event) => {
+        console.log(event);
         const all = await db.all();
-        const nextms = Date.now();
-        console.log(`updated ${nextms - ms}ms`);
+        setCount(all.length);
+      });
+      db.events.on("join", async (peerID, heads) => {
+        console.log("joined by: " + peerID);
+        const all = await db.all();
+        setCount(all.length);
+      });
+      db.events.on("leave", async (peerID, heads) => {
+        console.log("leaved by: " + peerID);
+        const all = await db.all();
         setCount(all.length);
       });
     }
   }, [db]);
 
-  // const [peers, setPeers] = useState(0);
+  const [peers, setPeers] = useState(0);
   const [conns, setConns] = useState(0);
-  const [ping, setPing] = useState(0);
 
   useEffect(() => {
     if (ipfs) {
       // Set up the interval
       const intervalId = setInterval(async () => {
         setConns(ipfs.libp2p.getConnections().length);
-        // const peers = await ipfs.libp2p.peerStore.all();
-        // setPeers(peers.length);
+        setPeers((await ipfs.libp2p.peerStore.all()).length);
       }, 3000);
 
       // Clean up the interval when the component unmounts or the effect re-runs
@@ -49,26 +54,35 @@ function App() {
   }, [ipfs]);
 
   useEffect(() => {
-    if (peerID) {
-      const intervalId = setInterval(async () => {
-        const conns = ipfs.libp2p.getConnections(peerIdFromString(peerID));
-        if (conns?.length) {
-          console.log("pinging: " + conns[0].remoteAddr.toString());
-          const latency = await ipfs.libp2p.services.ping.ping(
-            conns[0].remoteAddr,
-          );
-          setPing(latency);
-          if (!conn) {
-            setConn(conns[0]);
-          }
-        }
-      }, 1000);
-
-      return () => {
-        clearInterval(intervalId);
-      };
+    if (!conn) {
+      const conns = ipfs?.libp2p?.getConnections(peerIdFromString(peerID));
+      if (conns?.length) {
+        setConn(conns[0]);
+      }
     }
-  }, [peerID]);
+  }, [conn?.status]);
+
+  // useEffect(() => {
+  //   if (peerID) {
+  //     const intervalId = setInterval(async () => {
+  //       const conns = ipfs.libp2p.getConnections(peerIdFromString(peerID));
+  //       if (conns?.length) {
+  //         console.log("pinging: " + conns[0].remoteAddr.toString());
+  //         const latency = await ipfs.libp2p.services.ping.ping(
+  //           conns[0].remoteAddr,
+  //         );
+  //         setPing(latency);
+  //         if (!conn) {
+  //           setConn(conns[0]);
+  //         }
+  //       }
+  //     }, 1000);
+
+  //     return () => {
+  //       clearInterval(intervalId);
+  //     };
+  //   }
+  // }, [peerID]);
 
   useEffect(() => {
     if (conn?.status === "closed") {
@@ -109,6 +123,16 @@ function App() {
               if (conns?.length) {
                 console.log("reusing to " + peerID);
                 setConn(conns[0]);
+
+                console.log(
+                  await ipfs.libp2p.peerStore.merge(peer, {
+                    tags: {
+                      "keep-alive": {
+                        value: 100,
+                      },
+                    },
+                  }),
+                );
                 return;
               }
 
@@ -127,18 +151,24 @@ function App() {
                 console.log(peerInfo);
                 conn = await ipfs?.libp2p.dial(peer);
               }
-              ipfs.libp2p.peerStore.merge(peer, {
-                tags: {
-                  "keep-alive": { value: 100 },
-                },
-              });
+              console.log(
+                await ipfs.libp2p.peerStore.merge(peer, {
+                  tags: {
+                    "keep-alive": {
+                      value: 100,
+                      minConnections: 1, // This is key to protecting the peer from being trimmed
+                      maxConnections: 10,
+                    },
+                  },
+                }),
+              );
 
               console.log({ conn });
               setConn(conn);
             }
           }}
         >
-          {conn ? conn.status : "connect"} ({ping})
+          {conn ? conn.status : "connect"}
         </button>
         <br />
         <input
@@ -189,12 +219,21 @@ function App() {
         </button>
       </div>
       <div className="card">
-        <button onClick={async () => db.add("world")}>count is {count}</button>
-        <button onClick={async () => {}}>peers: {0}</button>
+        <button onClick={async () => await db.add("world")}>
+          count is {count}
+        </button>
+        <button onClick={async () => {}}>peers: {peers}</button>
         <button onClick={async () => {}}>conns: {conns}</button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
+        <br />
+        <button
+          onClick={async () => {
+            for (const peer in ipfs?.libp2p?.peerStore?.all() ?? []) {
+              ipfs?.libp2p?.peerStore?.delete(peer.id);
+            }
+          }}
+        >
+          reset
+        </button>
       </div>
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
