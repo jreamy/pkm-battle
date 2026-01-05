@@ -56,30 +56,26 @@ export const OrbitProvider = ({ children }) => {
     return close;
   }, []);
 
-  useEffect(() => {
-    const timeoutId = setTimeout(async () => {
-      clearTimeout(timeoutId);
+  // useEffect(() => {
+  //   const timeoutId = setTimeout(async () => {
+  //     clearTimeout(timeoutId);
 
-      if (ipfs?.libp2p && !ipfs.libp2p.getConnections().length) {
-        console.log("re-initializing ipfs");
+  //     if (ipfs?.libp2p && !ipfs.libp2p.getConnections().length) {
+  //       console.log("re-initializing ipfs");
 
-        for (const peer in await ipfs.libp2p.peerStore.all()) {
-          await ipfs.libp2p.peerStore.delete(peer.id);
-        }
-
-        const old = [ipfs, orbitdb];
-        init();
-        (async () => {
-          if (old.orbitdb) {
-            await old.orbitdb.close();
-          }
-          if (old.ipfs) {
-            await old.ipfs.close();
-          }
-        })();
-      }
-    }, 30_000);
-  }, [ipfs]);
+  //       const old = [ipfs, orbitdb];
+  //       init();
+  //       (async () => {
+  //         if (old.orbitdb) {
+  //           await old.orbitdb.close();
+  //         }
+  //         if (old.ipfs) {
+  //           await old.ipfs.close();
+  //         }
+  //       })();
+  //     }
+  //   }, 10_000);
+  // }, [ipfs]);
 
   const value = {
     ipfs,
