@@ -34,8 +34,8 @@ export const Libp2pOptions = {
       "/p2p-circuit",
       "/p2p-circuit",
       "/p2p-circuit",
-      // "/p2p-circuit",
-      // "/p2p-circuit",
+      "/p2p-circuit",
+      "/p2p-circuit",
     ],
     announceFilter: (addrs) =>
       addrs.filter((x) => x.toString().includes("/webrtc")),
@@ -44,18 +44,15 @@ export const Libp2pOptions = {
     circuitRelayTransport({ reservationConcurrency: 1 }),
     webRTCDirect(),
     webRTC(),
-    // webSockets()
+    webSockets(),
   ],
   connectionEncrypters: [noise()],
+  connectionGater: {
+    denyDialMultiaddr: async () => {
+      return false;
+    },
+  },
   streamMuxers: [yamux()],
-  // connectionGater: {
-  //   denyDialMultiaddr: async () => {
-  //     // if (multiaddr.toString().includes("/ws/")) {
-  //     //   return true; // Deny the connection
-  //     // }
-  //     return false; // Allow all other connections
-  //   },
-  // },
   peerStore: {
     persistence: true,
     threshold: 1,
