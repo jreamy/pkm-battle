@@ -15,6 +15,7 @@ import { webSockets } from "@libp2p/websockets";
 import { noise } from "@chainsafe/libp2p-noise";
 import { yamux } from "@chainsafe/libp2p-yamux";
 import { bootstrap } from "@libp2p/bootstrap";
+import { peerIdFromString } from "@libp2p/peer-id";
 
 export const bootstrapConfig = {
   list: [
@@ -28,15 +29,36 @@ export const bootstrapConfig = {
 
 export const Libp2pOptions = {
   addresses: {
-    listen: ["/p2p-circuit", "/webrtc"],
+    listen: [
+      "/webrtc",
+      "/p2p-circuit",
+      "/p2p-circuit",
+      "/p2p-circuit",
+      // "/p2p-circuit",
+      // "/p2p-circuit",
+    ],
+    announceFilter: (addrs) =>
+      addrs.filter((x) => x.toString().includes("/webrtc")),
   },
-  transports: [circuitRelayTransport(), webRTC(), webRTCDirect(), webSockets()],
+  transports: [
+    circuitRelayTransport({ reservationConcurrency: 1 }),
+    webRTCDirect(),
+    webRTC(),
+    // webSockets()
+  ],
   connectionEncrypters: [noise()],
   streamMuxers: [yamux()],
-  connectionGater: {
-    denyDialMultiaddr: async () => {
-      return false;
-    },
+  // connectionGater: {
+  //   denyDialMultiaddr: async () => {
+  //     // if (multiaddr.toString().includes("/ws/")) {
+  //     //   return true; // Deny the connection
+  //     // }
+  //     return false; // Allow all other connections
+  //   },
+  // },
+  peerStore: {
+    persistence: true,
+    threshold: 1,
   },
   peerDiscovery: [
     bootstrap(bootstrapConfig),
@@ -68,6 +90,8 @@ export const Libp2pOptions = {
     identify: identify(),
     identifyPush: identifyPush(),
     ping: ping(),
-    pubsub: gossipsub({ allowPublishToZeroTopicPeers: true }),
+    pubsub: gossipsub({
+      allowPublishToZeroTopicPeers: true,
+    }),
   },
 };

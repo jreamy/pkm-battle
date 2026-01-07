@@ -26,6 +26,10 @@ export const OrbitProvider = ({ children }) => {
       await datastore.open();
       await blockstore.open();
 
+      // localStorage.setItem("debug", "libp2p:gossipsub*");
+      // localStorage.setItem("debug", "libp2p:webrtc*");
+      // localStorage.setItem("debug", "libp2p:no-logs");
+
       const ipfs = await createHelia({
         libp2p: Libp2pOptions,
         blockstore,
@@ -55,27 +59,6 @@ export const OrbitProvider = ({ children }) => {
     init();
     return close;
   }, []);
-
-  // useEffect(() => {
-  //   const timeoutId = setTimeout(async () => {
-  //     clearTimeout(timeoutId);
-
-  //     if (ipfs?.libp2p && !ipfs.libp2p.getConnections().length) {
-  //       console.log("re-initializing ipfs");
-
-  //       const old = [ipfs, orbitdb];
-  //       init();
-  //       (async () => {
-  //         if (old.orbitdb) {
-  //           await old.orbitdb.close();
-  //         }
-  //         if (old.ipfs) {
-  //           await old.ipfs.close();
-  //         }
-  //       })();
-  //     }
-  //   }, 10_000);
-  // }, [ipfs]);
 
   const value = {
     ipfs,
