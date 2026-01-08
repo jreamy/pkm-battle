@@ -16,6 +16,7 @@ import { noise } from "@chainsafe/libp2p-noise";
 import { yamux } from "@chainsafe/libp2p-yamux";
 import { bootstrap } from "@libp2p/bootstrap";
 import { peerIdFromString } from "@libp2p/peer-id";
+import { useOrbit } from "./provider";
 
 export const bootstrapConfig = {
   list: [
@@ -70,7 +71,7 @@ export const Libp2pOptions = {
     pubsubPeerDiscovery({
       interval: 10000,
       topics: [
-        `_pmk_battle._peer-discovery._p2p._pubsub`,
+        `_pkm_battle._peer-discovery._p2p._pubsub`,
         "_peer-discovery._p2p._pubsub",
       ],
     }),
@@ -97,6 +98,9 @@ export const Libp2pOptions = {
     ping: ping(),
     pubsub: gossipsub({
       allowPublishToZeroTopicPeers: true,
+      scoreParams: {
+        topics: { "_pkm_battle._peer-discovery._p2p._pubsub": 100 },
+      },
     }),
   },
 };

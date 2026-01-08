@@ -25,9 +25,6 @@ function App() {
         console.log(event);
         const all = await db.all();
         setCount(all.length);
-        for (const ev of all) {
-          console.log(ev);
-        }
       });
       db.events.on("join", async (peerID, heads) => {
         console.log("joined by: " + peerID);
@@ -146,9 +143,7 @@ function App() {
               if (
                 conn.remoteAddr.toString().endsWith(`/webrtc/p2p/${peerID}`)
               ) {
-                console.log(
-                  `ping ${conn.remoteAddr}: ${await ipfs.libp2p.services.ping.ping(conn.remoteAddr)}`,
-                );
+                await ipfs.libp2p.services.ping.ping(conn.remoteAddr);
               }
             }
           }
