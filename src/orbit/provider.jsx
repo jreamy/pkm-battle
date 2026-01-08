@@ -28,8 +28,8 @@ export const OrbitProvider = ({ children }) => {
 
       // localStorage.setItem("debug", "libp2p:gossipsub*");
       // localStorage.setItem("debug", "libp2p:webrtc*");
-      localStorage.setItem("debug", "libp2p:connection-manager*");
-      // localStorage.setItem("debug", "libp2p:no-logs");
+      // localStorage.setItem("debug", "libp2p:connection-manager*");
+      localStorage.setItem("debug", "libp2p:no-logs");
 
       // const alias = await createHelia({
       //   libp2p: Libp2pOptions,
