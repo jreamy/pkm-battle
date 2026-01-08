@@ -36,6 +36,11 @@ function App() {
         const all = await db.all();
         setCount(all.length);
       });
+
+      (async () => {
+        const all = await db.all();
+        setCount(all.length);
+      })();
     }
   }, [db]);
 
@@ -128,22 +133,26 @@ function App() {
           const conns = ipfs?.libp2p?.getConnections(peerIdFromString(peerID));
           if (!conns?.length) {
             try {
-              const conn = await ipfs?.libp2p?.dialProtocol(
-                peerIdFromString(peerID),
-                "/webrtc",
-              );
+              const conn = await ipfs?.libp2p?.dial(peerIdFromString(peerID));
               console.log(conn);
               setConn(conn);
             } catch (err) {
               console.log(`failed to dial ${peerID}: ${err}`);
             }
           } else {
-            console.log({ conns });
+            const hasWebrtc = conns.filter((conn) =>
+              conn.remoteAddr.toString().endsWith(`/webrtc/p2p/${peerID}`),
+            )?.length;
             for (const conn of conns) {
               if (
                 conn.remoteAddr.toString().endsWith(`/webrtc/p2p/${peerID}`)
               ) {
+                console.log(
+                  await ipfs.libp2p.peerStore.get(peerIdFromString(peerID)),
+                );
                 await ipfs.libp2p.services.ping.ping(conn.remoteAddr);
+              } else if (hasWebrtc) {
+                conn.close();
               }
             }
           }
@@ -221,22 +230,16 @@ function App() {
               try {
                 console.log("attempt 1");
                 console.log(await ipfs.libp2p.peerStore.getInfo(peer));
-                conn = await ipfs?.libp2p.dialProtocol(peer, "/webrtc", {
-                  onProgress: (evt) => {
-                    console.log(evt);
-                  },
-                });
+                conn = await ipfs?.libp2p.dial(peer);
               } catch (err) {
                 console.log("attempt 2");
-                await ipfs.libp2p.peerStore.delete(peer);
+                await ipfs.libp2p.peerStore.patch(peer, {
+                  multiaddrs: [],
+                });
                 const peerInfo =
                   await ipfs?.libp2p?.peerRouting?.findPeer(peer);
                 console.log(peerInfo);
-                conn = await ipfs?.libp2p.dialProtocol(peer, "/webrtc", {
-                  onProgress: (evt) => {
-                    console.log(evt);
-                  },
-                });
+                conn = await ipfs?.libp2p.dial(peer);
               }
 
               if (conn) {
@@ -249,7 +252,6 @@ function App() {
                 });
               }
 
-              console.log({ conn });
               setConn(conn);
             }
           }}

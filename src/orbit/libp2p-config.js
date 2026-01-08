@@ -100,6 +100,7 @@ export const Libp2pOptions = {
       allowPublishToZeroTopicPeers: true,
       scoreParams: {
         topics: { "_pkm_battle._peer-discovery._p2p._pubsub": 100 },
+        IPColocationFactorWeight: 0,
       },
     }),
   },

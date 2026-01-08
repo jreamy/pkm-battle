@@ -29,7 +29,7 @@ export const OrbitProvider = ({ children }) => {
       // localStorage.setItem("debug", "libp2p:gossipsub*");
       // localStorage.setItem("debug", "libp2p:webrtc*");
       // localStorage.setItem("debug", "libp2p:connection-manager*");
-      localStorage.setItem("debug", "libp2p:no-logs");
+      localStorage.removeItem("debug");
 
       // const alias = await createHelia({
       //   libp2p: Libp2pOptions,
@@ -45,8 +45,6 @@ export const OrbitProvider = ({ children }) => {
       const orbitdb = await createOrbitDB({ ipfs });
       setOrbitDB(orbitdb);
 
-      // const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
       // while (true) {
       //   const ipfs = await createHelia({
       //     libp2p: Libp2pOptions,
@@ -56,21 +54,24 @@ export const OrbitProvider = ({ children }) => {
       //   setIPFS(ipfs);
       //   console.log({ ipfs });
 
-      //   for (let i = 0; i < 5; i++) {
-      //     try {
-      //       const conn = await alias.libp2p.dial(ipfs.libp2p.peerId);
-      //       if (conn?.status === "open") {
-      //         const orbitdb = await createOrbitDB({ ipfs });
-      //         setOrbitDB(orbitdb);
-      //         console.log("initialized");
-      //         await alias.stop();
-      //         return;
-      //       }
-      //     } catch (err) {
-      //       console.log(`failed to dial ${err}`);
+      // const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+      // for (let i = 0; i < 5; i++) {
+      //   try {
+      //     const conn = await alias.libp2p.dial(ipfs.libp2p.peerId);
+      //     if (conn?.status === "open") {
+      //       console.log("initialized");
+      //       await alias.stop();
+      //       return;
       //     }
-      //     await sleep((i + 1) * 1000);
+      //   } catch (err) {
+      //     console.log(`failed to dial ${err}`);
       //   }
+      //   await sleep((i + 1) * 1000);
+      // }
+
+      // await alias.stop();
+      // console.log("failed to dial self");
 
       //   await ipfs.stop();
       // }
